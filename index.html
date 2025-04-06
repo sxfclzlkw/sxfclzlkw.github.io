@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>链上数据过滤器筛选参数设置</title>
+    <style>
+        :root {
+            --primary-color: #e74c3c;
+            --secondary-color: #3498db;
+            --text-color: #333;
+            --light-gray: #f5f5f5;
+            --medium-gray: #ddd;
+            --dark-gray: #777;
+            --white: #fff;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--light-gray);
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: var(--white);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .language-switcher {
+            text-align: right;
+            margin-bottom: 15px;
+        }
+        
+        .language-btn {
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 5px;
+            font-size: 0.9rem;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+        
+        .language-btn:hover {
+            background: #e0e0e0;
+        }
+        
+        .language-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        h1 {
+            text-align: center;
+            color: var(--text-color);
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+        
+        h2 {
+            color: var(--primary-color);
+            padding: 8px 10px;
+            background-color: var(--light-gray);
+            border-left: 4px solid var(--primary-color);
+            margin: 20px 0 10px;
+            font-size: 1.2rem;
+        }
+        
+        .param-section {
+            margin-bottom: 15px;
+            padding: 12px;
+            background-color: var(--light-gray);
+            border-radius: 6px;
+        }
+        
+        .param-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 12px;
+        }
+        
+        @media (min-width: 768px) {
+            .param-group {
+                flex-direction: row;
+                align-items: center;
+            }
+        }
+        
+        .param-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            width: 100%;
+        }
+        
+        @media (min-width: 768px) {
+            .param-label {
+                width: 200px;
+                margin-right: 10px;
+                margin-bottom: 0;
+            }
+        }
+        
+        .param-controls {
+            flex: 1;
+            width: 100%;
+        }
+        
+        .range-group {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        
+        .range-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid var(--medium-gray);
+            border-radius: 4px;
+            margin-right: 5px;
+            min-width: 0;
+        }
+        
+        .range-separator {
+            margin: 0 5px;
+            color: var(--dark-gray);
+            white-space: nowrap;
+        }
+        
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--medium-gray);
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+        
+        @media (min-width: 768px) {
+            input[type="text"],
+            input[type="number"],
+            select {
+                width: 250px;
+                margin-bottom: 0;
+            }
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+        }
+        
+        .checkbox-group input {
+            width: auto;
+            margin-right: 5px;
+        }
+        
+        .unit {
+            margin-left: 5px;
+            color: var(--dark-gray);
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 10px 15px;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto 0;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+        
+        .clear-btn {
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            display: block;
+            margin: 10px auto 0;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+        
+        .clear-btn:hover {
+            background-color: #7f8c8d;
+        }
+        
+        @media (min-width: 768px) {
+            button {
+                width: auto;
+                padding: 12px 20px;
+            }
+            
+            .clear-btn {
+                width: auto;
+                padding: 12px 20px;
+                margin-left: 10px;
+                display: inline-block;
+            }
+            
+            .button-group {
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+            }
+        }
+        
+        button:hover {
+            background-color: #c0392b;
+        }
+        
+        .copy-hint {
+            font-size: 0.8em;
+            color: var(--dark-gray);
+            margin-top: 3px;
+        }
+        
+        .chain-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .chain-option {
+            background: var(--medium-gray);
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+        
+        .chain-option:hover {
+            background: #ccc;
+        }
+        
+        #result {
+            margin-top: 20px;
+            padding: 12px;
+            background-color: var(--light-gray);
+            border-radius: 5px;
+            border-left: 4px solid var(--primary-color);
+            word-break: break-all;
+            display: none;
+        }
+        
+        #result h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+        
+        .copy-btn {
+            background-color: var(--secondary-color);
+            color: var(--white);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+        
+        @media (min-width: 768px) {
+            .copy-btn {
+                width: auto;
+            }
+        }
+        
+        .copy-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        #copyStatus {
+            margin-top: 8px;
+            color: var(--primary-color);
+            font-size: 0.85em;
+        }
+        
+        /* 移动设备特定调整 */
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 1.3rem;
+            }
+            
+            h2 {
+                font-size: 1.1rem;
+                padding: 6px 8px;
+            }
+            
+            .param-section {
+                padding: 10px;
+            }
+            
+            .range-group {
+                flex-wrap: wrap;
+            }
+            
+            .range-input {
+                min-width: calc(50% - 10px);
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="language-switcher">
+            <button class="language-btn active" id="zhBtn">中文</button>
+            <button class="language-btn" id="enBtn">English</button>
+        </div>
+        
+        <h1 data-zh="链上数据过滤器筛选参数设置" data-en="On-chain Data Filter Screening Parameter Settings">链上数据过滤器筛选参数设置</h1>
+        
+        <form id="filterForm">
+            <!-- 基本参数 -->
+            <h2 data-zh="不需要的参数直接留空，不用设置，设置好之后请点击页面底部的生成按钮，复制生成的参数串，返回电报设置过滤器" 
+                data-en="Leave unnecessary parameters blank. After setting, click the generate button at the bottom, copy the generated parameter string, and return to Telegram to set up the filter">
+                🔴 不需要的参数直接留空，不用设置，设置好之后请点击页面底部的生成按钮，复制生成的参数串，返回电报设置过滤器
+            </h2>
+            <h2 data-zh="🔴 基本参数" data-en="🔴 Basic Parameters">🔴 基本参数</h2>
+            <div class="param-section">
+                <div class="param-group">
+                    <label class="param-label" data-zh="公链选择 (chainIds):" data-en="Blockchain selection (chainIds):">公链选择 (chainIds):</label>
+                    <div class="param-controls">
+                        <input type="text" id="chainIds" name="chainIds" placeholder="solana,ethereum,base,...">
+                        <div class="copy-hint" data-zh="多个值用半角逗号隔开，留空为全链扫描" data-en="Multiple values separated by commas, leave blank for all chains">多个值用半角逗号隔开，留空为全链扫描</div>
+                    </div>
+                </div>
+                <div class="chain-options">
+                    <div class="chain-option" onclick="document.getElementById('chainIds').value='solana'">solana</div>
+                    <div class="chain-option" onclick="document.getElementById('chainIds').value='ethereum'">ethereum</div>
+                    <div class="chain-option" onclick="document.getElementById('chainIds').value='base'">base</div>
+                    <div class="chain-option" onclick="document.getElementById('chainIds').value='bsc'">bsc</div>
+                    <div class="chain-option" onclick="document.getElementById('chainIds').value='solana,ethereum'">solana,ethereum</div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="DexScreener付费资料 (profile):" data-en="DexScreener premium data (profile):">DexScreener付费资料 (profile):</label>
+                    <div class="param-controls checkbox-group">
+                        <input type="checkbox" id="profile" name="profile" value="1">
+                        <label for="profile" data-zh="启用 (值为1)" data-en="Enable (value is 1)">启用 (值为1)</label>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="DexScreener付费广告 (ads):" data-en="DexScreener premium ads (ads):">DexScreener付费广告 (ads):</label>
+                    <div class="param-controls checkbox-group">
+                        <input type="checkbox" id="ads" name="ads" value="1">
+                        <label for="ads" data-zh="启用 (值为1)" data-en="Enable (value is 1)">启用 (值为1)</label>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="Pump外盘 (pump):" data-en="Pump external market (pump):">Pump外盘 (pump):</label>
+                    <div class="param-controls checkbox-group">
+                        <input type="checkbox" id="pump" name="pump" value="1">
+                        <label for="pump" data-zh="启用 (值为1)" data-en="Enable (value is 1)">启用 (值为1)</label>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="底池流动性范围 (minLiq/maxLiq):" data-en="Liquidity pool range (minLiq/maxLiq):">底池流动性范围 (minLiq/maxLiq):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="minLiq" name="minLiq" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="maxLiq" name="maxLiq" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                            <span class="unit" data-zh="美元" data-en="USD">美元</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="流通市值范围 (minMarketCap/maxMarketCap):" data-en="Circulating market cap range (minMarketCap/maxMarketCap):">流通市值范围 (minMarketCap/maxMarketCap):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="minMarketCap" name="minMarketCap" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="maxMarketCap" name="maxMarketCap" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                            <span class="unit" data-zh="美元" data-en="USD">美元</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="总市值范围 (minFdv/maxFdv):" data-en="Fully diluted valuation range (minFdv/maxFdv):">总市值范围 (minFdv/maxFdv):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="minFdv" name="minFdv" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="maxFdv" name="maxFdv" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                            <span class="unit" data-zh="美元" data-en="USD">美元</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="开盘时间范围 (minAge/maxAge):" data-en="Launch time range (minAge/maxAge):">开盘时间范围 (minAge/maxAge):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="minAge" name="minAge" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="maxAge" name="maxAge" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                            <span class="unit" data-zh="小时" data-en="hours">小时</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 24小时链上数据参数 -->
+            <h2 data-zh="🔴 24小时链上数据参数" data-en="🔴 24-hour On-chain Data Parameters">🔴 24小时链上数据参数</h2>
+            <div class="param-section">
+                <div class="param-group">
+                    <label class="param-label" data-zh="24小时交易数范围 (min24HTxns/max24HTxns):" data-en="24h transactions range (min24HTxns/max24HTxns):">24小时交易数范围 (min24HTxns/max24HTxns):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min24HTxns" name="min24HTxns" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max24HTxns" name="max24HTxns" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="24小时买入数范围 (min24HBuys/max24HBuys):" data-en="24h buy transactions range (min24HBuys/max24HBuys):">24小时买入数范围 (min24HBuys/max24HBuys):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min24HBuys" name="min24HBuys" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max24HBuys" name="max24HBuys" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="24小时卖出数范围 (min24HSells/max24HSells):" data-en="24h sell transactions range (min24HSells/max24HSells):">24小时卖出数范围 (min24HSells/max24HSells):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min24HSells" name="min24HSells" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max24HSells" name="max24HSells" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="24小时交易量范围 (min24HVol/max24HVol):" data-en="24h trading volume range (min24HVol/max24HVol):">24小时交易量范围 (min24HVol/max24HVol):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min24HVol" name="min24HVol" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max24HVol" name="max24HVol" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                            <span class="unit" data-zh="美元" data-en="USD">美元</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="24小时涨幅范围 (min24HChg/max24HChg):" data-en="24h price change range (min24HChg/max24HChg):">24小时涨幅范围 (min24HChg/max24HChg):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min24HChg" name="min24HChg" placeholder="最小值" min="-100" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max24HChg" name="max24HChg" placeholder="最大值" min="-100" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                            <span class="unit">%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 6小时链上数据参数 -->
+            <h2 data-zh="🔴 6小时链上数据参数" data-en="🔴 6-hour On-chain Data Parameters">🔴 6小时链上数据参数</h2>
+            <div class="param-section">
+                <div class="param-group">
+                    <label class="param-label" data-zh="6小时交易数范围 (min6HTxns/max6HTxns):" data-en="6h transactions range (min6HTxns/max6HTxns):">6小时交易数范围 (min6HTxns/max6HTxns):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min6HTxns" name="min6HTxns" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max6HTxns" name="max6HTxns" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="6小时买入数范围 (min6HBuys/max6HBuys):" data-en="6h buy transactions range (min6HBuys/max6HBuys):">6小时买入数范围 (min6HBuys/max6HBuys):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min6HBuys" name="min6HBuys" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max6HBuys" name="max6HBuys" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="6小时卖出数范围 (min6HSells/max6HSells):" data-en="6h sell transactions range (min6HSells/max6HSells):">6小时卖出数范围 (min6HSells/max6HSells):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min6HSells" name="min6HSells" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max6HSells" name="max6HSells" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="6小时交易量范围 (min6HVol/max6HVol):" data-en="6h trading volume range (min6HVol/max6HVol):">6小时交易量范围 (min6HVol/max6HVol):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min6HVol" name="min6HVol" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max6HVol" name="max6HVol" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                            <span class="unit" data-zh="美元" data-en="USD">美元</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="6小时涨幅范围 (min6HChg/max6HChg):" data-en="6h price change range (min6HChg/max6HChg):">6小时涨幅范围 (min6HChg/max6HChg):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min6HChg" name="min6HChg" placeholder="最小值" min="-100" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max6HChg" name="max6HChg" placeholder="最大值" min="-100" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                            <span class="unit">%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 1小时链上数据参数 -->
+            <h2 data-zh="🔴 1小时链上数据参数" data-en="🔴 1-hour On-chain Data Parameters">🔴 1小时链上数据参数</h2>
+            <div class="param-section">
+                <div class="param-group">
+                    <label class="param-label" data-zh="1小时交易数范围 (min1HTxns/max1HTxns):" data-en="1h transactions range (min1HTxns/max1HTxns):">1小时交易数范围 (min1HTxns/max1HTxns):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min1HTxns" name="min1HTxns" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max1HTxns" name="max1HTxns" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="1小时买入数范围 (min1HBuys/max1HBuys):" data-en="1h buy transactions range (min1HBuys/max1HBuys):">1小时买入数范围 (min1HBuys/max1HBuys):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min1HBuys" name="min1HBuys" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max1HBuys" name="max1HBuys" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="1小时卖出数范围 (min1HSells/max1HSells):" data-en="1h sell transactions range (min1HSells/max1HSells):">1小时卖出数范围 (min1HSells/max1HSells):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min1HSells" name="min1HSells" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max1HSells" name="max1HSells" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="1小时交易量范围 (min1HVol/max1HVol):" data-en="1h trading volume range (min1HVol/max1HVol):">1小时交易量范围 (min1HVol/max1HVol):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min1HVol" name="min1HVol" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max1HVol" name="max1HVol" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                            <span class="unit" data-zh="美元" data-en="USD">美元</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="1小时涨幅范围 (min1HChg/max1HChg):" data-en="1h price change range (min1HChg/max1HChg):">1小时涨幅范围 (min1HChg/max1HChg):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min1HChg" name="min1HChg" placeholder="最小值" min="-100" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max1HChg" name="max1HChg" placeholder="最大值" min="-100" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                            <span class="unit">%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 5分钟链上数据参数 -->
+            <h2 data-zh="🔴 5分钟链上数据参数" data-en="🔴 5-minute On-chain Data Parameters">🔴 5分钟链上数据参数</h2>
+            <div class="param-section">
+                <div class="param-group">
+                    <label class="param-label" data-zh="5分钟交易数范围 (min5MTxns/max5MTxns):" data-en="5m transactions range (min5MTxns/max5MTxns):">5分钟交易数范围 (min5MTxns/max5MTxns):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min5MTxns" name="min5MTxns" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max5MTxns" name="max5MTxns" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="5分钟买入数范围 (min5MBuys/max5MBuys):" data-en="5m buy transactions range (min5MBuys/max5MBuys):">5分钟买入数范围 (min5MBuys/max5MBuys):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min5MBuys" name="min5MBuys" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max5MBuys" name="max5MBuys" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="5分钟卖出数范围 (min5MSells/max5MSells):" data-en="5m sell transactions range (min5MSells/max5MSells):">5分钟卖出数范围 (min5MSells/max5MSells):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min5MSells" name="min5MSells" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max5MSells" name="max5MSells" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="5分钟交易量范围 (min5MVol/max5MVol):" data-en="5m trading volume range (min5MVol/max5MVol):">5分钟交易量范围 (min5MVol/max5MVol):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min5MVol" name="min5MVol" placeholder="最小值" min="0" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max5MVol" name="max5MVol" placeholder="最大值" min="0" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                            <span class="unit" data-zh="美元" data-en="USD">美元</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="param-group">
+                    <label class="param-label" data-zh="5分钟涨幅范围 (min5MChg/max5MChg):" data-en="5m price change range (min5MChg/max5MChg):">5分钟涨幅范围 (min5MChg/max5MChg):</label>
+                    <div class="param-controls">
+                        <div class="range-group">
+                            <input type="number" class="range-input" id="min5MChg" name="min5MChg" placeholder="最小值" min="-100" data-placeholder-zh="最小值" data-placeholder-en="Min">
+                            <span class="range-separator">~</span>
+                            <input type="number" class="range-input" id="max5MChg" name="max5MChg" placeholder="最大值" min="-100" data-placeholder-zh="最大值" data-placeholder-en="Max">
+                            <span class="unit">%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button type="button" id="generateBtn" data-zh="生成过滤器参数串" data-en="Generate Filter Parameters">生成过滤器参数串</button>
+                <button type="button" id="clearBtn" class="clear-btn" data-zh="一键清空设置" data-en="Clear All Settings">一键清空设置</button>
+            </div>
+        </form>
+        
+        <div id="result" style="display: none;">
+            <h3 data-zh="生成的过滤器参数请复制后再返回电报设置，您生成的过滤器参数串如下：" 
+                data-en="Please copy the generated filter parameters and return to Telegram to set them up. Your generated parameter string is as follows:">
+                生成的过滤器参数请复制后再返回电报设置，您生成的过滤器参数串如下：
+            </h3>
+            
+            <div id="paramOutput" style="word-break: break-all; padding: 8px; background: white; border-radius: 4px; margin: 8px 0;"></div>
+            <button class="copy-btn" id="copyBtn" data-zh="复制参数串" data-en="Copy Parameters">复制参数串</button>
+            <div id="copyStatus"></div>
+        </div>
+    </div>
+
+    <script>
+        // 语言切换功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const zhBtn = document.getElementById('zhBtn');
+            const enBtn = document.getElementById('enBtn');
+            
+            // 检查本地存储中的语言设置
+            const savedLang = localStorage.getItem('preferredLanguage') || 'zh';
+            setLanguage(savedLang);
+            
+            zhBtn.addEventListener('click', function() {
+                setLanguage('zh');
+                localStorage.setItem('preferredLanguage', 'zh');
+            });
+            
+            enBtn.addEventListener('click', function() {
+                setLanguage('en');
+                localStorage.setItem('preferredLanguage', 'en');
+            });
+            
+            function setLanguage(lang) {
+                // 更新按钮状态
+                if (lang === 'zh') {
+                    zhBtn.classList.add('active');
+                    enBtn.classList.remove('active');
+                } else {
+                    zhBtn.classList.remove('active');
+                    enBtn.classList.add('active');
+                }
+                
+                // 更新文本内容
+                document.querySelectorAll('[data-zh]').forEach(element => {
+                    const text = lang === 'zh' ? element.getAttribute('data-zh') : element.getAttribute('data-en');
+                    if (element.textContent !== text) {
+                        element.textContent = text;
+                    }
+                });
+
+                // 更新输入框placeholder
+                document.querySelectorAll('input[data-placeholder-zh]').forEach(input => {
+                    input.placeholder = lang === 'zh' ? input.getAttribute('data-placeholder-zh') : input.getAttribute('data-placeholder-en');
+                });
+
+                // 更新单位显示
+                document.querySelectorAll('.unit[data-zh]').forEach(unit => {
+                    unit.textContent = lang === 'zh' ? unit.getAttribute('data-zh') : unit.getAttribute('data-en');
+                });
+
+                // 更新页面标题
+                document.title = lang === 'zh' ? '链上数据过滤器筛选参数设置' : 'On-chain Data Filter Screening Parameter Settings';
+
+                // 更新按钮文本
+                document.querySelectorAll('button[data-zh]').forEach(button => {
+                    button.textContent = lang === 'zh' ? button.getAttribute('data-zh') : button.getAttribute('data-en');
+                });
+            }
+
+            // 自动保存和加载功能
+            function saveSettings() {
+                const form = document.getElementById('filterForm');
+                const formData = new FormData(form);
+                const params = {};
+                
+                for (const [name, value] of formData.entries()) {
+                    const element = form.elements[name];
+                    if (element) {
+                        if (element.type === 'checkbox') {
+                            params[name] = element.checked ? value : '';
+                        } else {
+                            params[name] = value;
+                        }
+                    }
+                }
+                
+                // 过滤掉空值
+                const filteredParams = Object.fromEntries(
+                    Object.entries(params).filter(([_, v]) => v !== '' && v !== '0')
+                );
+                
+                localStorage.setItem('filterSettings', JSON.stringify(filteredParams));
+                console.log('设置已保存:', filteredParams);
+            }
+            
+            function loadSettings() {
+                const saved = localStorage.getItem('filterSettings');
+                if (saved) {
+                    try {
+                        const params = JSON.parse(saved);
+                        console.log('正在加载设置:', params);
+                        
+                        for (const [key, value] of Object.entries(params)) {
+                            const element = document.querySelector(`[name="${key}"]`);
+                            if (element) {
+                                if (element.type === 'checkbox') {
+                                    element.checked = value === '1';
+                                } else {
+                                    element.value = value;
+                                }
+                            }
+                        }
+                        return true;
+                    } catch (e) {
+                        console.error('加载设置失败:', e);
+                        return false;
+                    }
+                }
+                return false;
+            }
+            
+            // 清空所有设置（保留语言设置）
+            function clearAllSettings() {
+                // 保存当前语言设置
+                const currentLang = localStorage.getItem('preferredLanguage') || 'zh';
+                
+                // 清空表单
+                document.getElementById('filterForm').reset();
+                
+                // 清空本地存储（除语言设置外）
+                localStorage.removeItem('filterSettings');
+                
+                // 恢复语言设置
+                localStorage.setItem('preferredLanguage', currentLang);
+                
+                // 隐藏结果区域
+                document.getElementById('result').style.display = 'none';
+                
+                // 提示用户
+                const isChinese = document.getElementById('zhBtn').classList.contains('active');
+                alert(isChinese ? '所有设置已清空！' : 'All settings cleared!');
+            }
+            
+            // 页面加载时恢复设置
+            (function init() {
+                // 先加载语言设置
+                const savedLang = localStorage.getItem('preferredLanguage') || 'zh';
+                setLanguage(savedLang);
+                
+                // 然后加载表单设置
+                if (loadSettings()) {
+                    console.log('设置已自动恢复');
+                }
+                
+                // 为所有输入元素添加事件监听器，实现自动保存
+                const form = document.getElementById('filterForm');
+                form.addEventListener('input', debounce(saveSettings, 300));
+                form.addEventListener('change', saveSettings);
+                
+                // 复选框需要特殊处理
+                document.querySelectorAll('#filterForm input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.addEventListener('change', saveSettings);
+                });
+            })();
+            
+            // 防抖函数，减少频繁保存
+            function debounce(func, wait) {
+                let timeout;
+                return function() {
+                    const context = this, args = arguments;
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => {
+                        func.apply(context, args);
+                    }, wait);
+                };
+            }
+            
+            // 生成按钮点击事件
+            document.getElementById('generateBtn').addEventListener('click', function() {
+                const form = document.getElementById('filterForm');
+                const formData = new FormData(form);
+                const params = {};
+                
+                for (const [name, value] of formData.entries()) {
+                    const element = form.elements[name];
+                    if (element) {
+                        if (element.type === 'checkbox') {
+                            if (element.checked) {
+                                params[name] = value;
+                            }
+                        } else if (value !== '' && value !== '0') {
+                            params[name] = value;
+                        }
+                    }
+                }
+                
+                let paramString = '';
+                for (const key in params) {
+                    if (paramString !== '') paramString += '&';
+                    paramString += `${key}=${params[key]}`;
+                }
+                
+                // 保存设置到本地存储
+                saveSettings();
+                
+                document.getElementById('paramOutput').textContent ='&'+ paramString;
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+            });
+            
+            // 清空按钮点击事件
+            document.getElementById('clearBtn').addEventListener('click', clearAllSettings);
+            
+            // 复制功能
+            document.getElementById('copyBtn').addEventListener('click', function() {
+                const paramString = document.getElementById('paramOutput').textContent;
+                const statusElement = document.getElementById('copyStatus');
+                
+                // 设置复制状态文本
+                const isChinese = document.getElementById('zhBtn').classList.contains('active');
+                const successText = isChinese ? '参数已复制到剪贴板!' : 'Parameters copied to clipboard!';
+                const failText = isChinese ? '自动复制失败，请手动选择文本后按Ctrl+C复制' : 'Auto copy failed, please select text and press Ctrl+C';
+                const errorText = isChinese ? '复制错误，请手动选择文本后按Ctrl+C复制' : 'Copy error, please select text and press Ctrl+C';
+                
+                // 方法1: 使用现代Clipboard API
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(paramString).then(function() {
+                        statusElement.textContent = successText;
+                        setTimeout(() => statusElement.textContent = '', 2000);
+                    }).catch(function(err) {
+                        console.error('使用Clipboard API复制失败:', err);
+                        fallbackCopyText(paramString);
+                    });
+                } else {
+                    // 方法2: 使用老式execCommand作为回退
+                    fallbackCopyText(paramString);
+                }
+                
+                function fallbackCopyText(text) {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    textarea.style.position = 'fixed';
+                    textarea.style.left = '-9999px';
+                    textarea.style.top = '0';
+                    document.body.appendChild(textarea);
+                    textarea.focus();
+                    textarea.select();
+                    
+                    try {
+                        const successful = document.execCommand('copy');
+                        if (successful) {
+                            statusElement.textContent = successText;
+                        } else {
+                            statusElement.textContent = failText;
+                        }
+                        setTimeout(() => statusElement.textContent = '', 2000);
+                    } catch (err) {
+                        statusElement.textContent = errorText;
+                        setTimeout(() => statusElement.textContent = '', 3000);
+                    }
+                    
+                    document.body.removeChild(textarea);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
