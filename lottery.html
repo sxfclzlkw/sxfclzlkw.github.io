@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>随机抽奖系统</title>
+    <title>多彩随机抽奖系统</title>
     <style>
         :root {
             --primary-color: #e74c3c;
@@ -98,9 +98,14 @@
             background-color: var(--primary-color);
         }
         
-        #drawBtn:hover {
+        #drawBtn:hover:not(:disabled) {
             background-color: #c0392b;
             transform: translateY(-2px);
+        }
+        
+        #drawBtn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
         }
         
         .copy-btn {
@@ -136,6 +141,26 @@
             line-height: 1.6;
             word-break: break-all;
             overflow-wrap: break-word;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .winner-number {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+            margin: 2px;
+        }
+        
+        .result-box.animating .winner-number {
+            animation: pulse 0.5s infinite alternate;
+        }
+        
+        @keyframes pulse {
+            from { opacity: 0.6; }
+            to { opacity: 1; }
         }
         
         .history {
@@ -177,12 +202,17 @@
                 padding: 12px;
                 font-size: 1rem;
             }
+            
+            .winner-number {
+                padding: 4px 8px;
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>随机抽奖系统</h1>
+        <h1>多彩随机抽奖系统</h1>
         
         <div class="control-panel">
             <div class="control-group">
@@ -227,8 +257,40 @@
             const maxNumberInput = document.getElementById('maxNumber');
             const winnerCountInput = document.getElementById('winnerCount');
             
+            // 颜色选项
+            const textColors = [
+                '#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6', 
+                '#1abc9c', '#d35400', '#34495e', '#c0392b', '#2980b9'
+            ];
+            
+            const bgColors = [
+                '#fadbd8', '#d6eaf8', '#d5f5e3', '#fdebd0', '#e8daef',
+                '#d1f2eb', '#f6ddcc', '#d5dbdb', '#f9ebea', '#d4e6f1'
+            ];
+            
+            let isAnimating = false;
+            let animationInterval;
+            let animationEndTime;
+            
+            // 获取随机颜色
+            function getRandomColor(colors) {
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+            
+            // 创建带样式的数字元素
+            function createNumberElement(number) {
+                const el = document.createElement('span');
+                el.className = 'winner-number';
+                el.textContent = number;
+                el.style.color = getRandomColor(textColors);
+                el.style.backgroundColor = getRandomColor(bgColors);
+                return el;
+            }
+            
             // 抽奖函数
             function drawWinners() {
+                if (isAnimating) return;
+                
                 const min = parseInt(minNumberInput.value);
                 const max = parseInt(maxNumberInput.value);
                 const count = parseInt(winnerCountInput.value);
@@ -249,13 +311,51 @@
                     return;
                 }
                 
+                // 禁用按钮
+                drawBtn.disabled = true;
+                isAnimating = true;
+                resultBox.classList.add('animating');
+                resultBox.innerHTML = ''; // 清空结果
+                
                 // 生成所有可能的数字
                 const allNumbers = [];
                 for (let i = min; i <= max; i++) {
                     allNumbers.push(i);
                 }
                 
-                // 随机抽取
+                // 开始动画
+                animationEndTime = Date.now() + 5000; // 5秒后结束
+                
+                animationInterval = setInterval(() => {
+                    // 随机生成临时结果
+                    const tempWinners = [];
+                    const numbersCopy = [...allNumbers];
+                    
+                    for (let i = 0; i < count; i++) {
+                        if (numbersCopy.length === 0) break;
+                        
+                        const randomIndex = Math.floor(Math.random() * numbersCopy.length);
+                        tempWinners.push(numbersCopy[randomIndex]);
+                        numbersCopy.splice(randomIndex, 1);
+                    }
+                    
+                    // 显示临时结果
+                    resultBox.innerHTML = '';
+                    tempWinners.sort((a, b) => a - b).forEach(num => {
+                        resultBox.appendChild(createNumberElement(num));
+                    });
+                    
+                    // 检查是否结束
+                    if (Date.now() >= animationEndTime) {
+                        clearInterval(animationInterval);
+                        finishDrawing(allNumbers, min, max, count);
+                    }
+                }, 100); // 每100毫秒更新一次
+            }
+            
+            // 完成抽奖
+            function finishDrawing(allNumbers, min, max, count) {
+                // 生成最终结果
                 const winners = [];
                 const numbersCopy = [...allNumbers];
                 
@@ -270,8 +370,17 @@
                 // 排序结果
                 winners.sort((a, b) => a - b);
                 
-                // 显示结果
-                resultBox.textContent = winners.join(', ');
+                // 显示最终结果
+                resultBox.innerHTML = '';
+                winners.forEach(num => {
+                    resultBox.appendChild(createNumberElement(num));
+                });
+                
+                resultBox.classList.remove('animating');
+                
+                // 启用按钮
+                drawBtn.disabled = false;
+                isAnimating = false;
                 
                 // 添加到历史记录
                 addToHistory(winners, min, max, count);
@@ -284,11 +393,21 @@
                 
                 const historyItem = document.createElement('div');
                 historyItem.className = 'history-item';
+                
+                // 创建历史记录中的多彩数字
+                const numbersContainer = document.createElement('div');
+                winners.forEach(num => {
+                    const numEl = createNumberElement(num);
+                    numEl.style.margin = '2px';
+                    numbersContainer.appendChild(numEl);
+                });
+                
                 historyItem.innerHTML = `
                     <strong>${timeStr}</strong> - 
                     范围: ${min}-${max}, 中奖人数: ${count}<br>
-                    结果: ${winners.join(', ')}
+                    结果: 
                 `;
+                historyItem.appendChild(numbersContainer);
                 
                 historyList.insertBefore(historyItem, historyList.firstChild);
                 
@@ -300,13 +419,16 @@
             
             // 复制结果
             function copyResult() {
-                const text = resultBox.textContent;
-                if (!text.trim()) {
+                const winners = Array.from(resultBox.querySelectorAll('.winner-number'))
+                    .map(el => el.textContent)
+                    .join(', ');
+                
+                if (!winners.trim()) {
                     alert('没有可复制的结果！');
                     return;
                 }
                 
-                navigator.clipboard.writeText(text)
+                navigator.clipboard.writeText(winners)
                     .then(() => {
                         copyBtn.textContent = '已复制！';
                         copyBtn.classList.add('copied');
@@ -319,7 +441,7 @@
                         console.error('复制失败:', err);
                         // 备用复制方法
                         const textarea = document.createElement('textarea');
-                        textarea.value = text;
+                        textarea.value = winners;
                         document.body.appendChild(textarea);
                         textarea.select();
                         try {
