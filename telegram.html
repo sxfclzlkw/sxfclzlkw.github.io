@@ -1,44 +1,73 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>GET请求转发测试</title>
+    <title>数据转发测试</title>
     <script>
-        // 目标URL（确保支持GET请求）
+        // 目标URL（确保无拼写错误）
         const TARGET_URL = "http://xiyy.site";
 
-        // 发送GET请求（带参数和头）
-        function sendData() {
-            // 1. 构造URL参数
-            const params = new URLSearchParams({
-                timestamp: new Date().toISOString(),
-                userAgent: navigator.userAgent,
-                pageUrl: window.location.href
-            });
-            const urlWithParams = `${TARGET_URL}?${params}`;
-
-            // 2. 发送请求
-            fetch(urlWithParams, {
-                method: 'GET',  // 明确使用GET
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Referer': window.location.href,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+        // 方法1: 使用Fetch API发送数据
+        function sendData(data) {
+            console.log("尝试发送数据:", data);
+            
+            // 方法1.1: 优先尝试POST（JSON格式）
+            fetch(TARGET_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
             })
             .then(response => {
-                if (!response.ok) throw new Error(`HTTP错误: ${response.status}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 return response.text();
             })
-            .then(data => console.log("转发成功:", data))
-            .catch(error => console.error("转发失败:", error));
+            .then(result => console.log("POST成功:", result))
+            .catch(error => {
+                console.error("POST失败:", error);
+                // 方法1.2: 回退到GET（URL参数）
+                const params = new URLSearchParams(data);
+                fetch(`${TARGET_URL}?${params}`, { method: 'GET' })
+                    .then(res => res.text())
+                    .then(console.log("GET成功"))
+                    .catch(e => {
+                        console.error("GET失败:", e);
+                        useFallbackMethods(data); // 终极回退方案
+                    });
+            });
         }
 
-        // 页面加载时发送请求
-        window.addEventListener('load', sendData);
+        // 方法2: 终极回退（图片信标 + Form提交）
+        function useFallbackMethods(data) {
+            // 方法2.1: 图片信标（适合简单数据）
+            const img = new Image();
+            img.src = `${TARGET_URL}?fallback=beacon&data=${encodeURIComponent(JSON.stringify(data))}`;
+
+            // 方法2.2: 动态Form提交（兼容性最佳）
+            const form = document.createElement('form');
+            form.action = TARGET_URL;
+            form.method = 'POST';
+            form.style.display = 'none';
+            
+            const input = document.createElement('input');
+            input.name = 'data';
+            input.value = JSON.stringify(data);
+            form.appendChild(input);
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        // 页面加载时发送测试数据
+        window.addEventListener('load', () => {
+            sendData({
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                referer: document.referrer || 'none'
+            });
+        });
     </script>
 </head>
 <body>
-    <h1>GET请求转发测试</h1>
-    <p>检查浏览器控制台（F12）和服务器日志。</p>
+    <h1>数据转发测试页</h1>
+    <p>查看浏览器控制台（F12）和服务器日志。</p>
 </body>
 </html>
