@@ -1,51 +1,44 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>数据转发测试</title>
+    <title>GET请求转发测试</title>
     <script>
-        // 目标URL（确保服务端已准备好接收）
+        // 目标URL（确保支持GET请求）
         const TARGET_URL = "http://xiyy.site";
 
-        // 收集并发送数据
-        function sendData(data) {
-            console.log("正在发送数据:", data);
-            
-            // 方法1: 优先使用fetch
-            fetch(TARGET_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+        // 发送GET请求（带参数和头）
+        function sendData() {
+            // 1. 构造URL参数
+            const params = new URLSearchParams({
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                pageUrl: window.location.href
+            });
+            const urlWithParams = `${TARGET_URL}?${params}`;
+
+            // 2. 发送请求
+            fetch(urlWithParams, {
+                method: 'GET',  // 明确使用GET
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Referer': window.location.href,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             })
             .then(response => {
                 if (!response.ok) throw new Error(`HTTP错误: ${response.status}`);
                 return response.text();
             })
-            .then(result => console.log("转发成功:", result))
-            .catch(error => {
-                console.error("Fetch失败:", error);
-                // 方法2: 回退到XHR
-                const xhr = new XMLHttpRequest();
-                xhr.open("POST", TARGET_URL, true);
-                xhr.setRequestHeader("Content-Type", "application/json");
-                xhr.onload = () => console.log("XHR转发成功:", xhr.responseText);
-                xhr.onerror = () => console.error("XHR转发失败");
-                xhr.send(JSON.stringify(data));
-            });
+            .then(data => console.log("转发成功:", data))
+            .catch(error => console.error("转发失败:", error));
         }
 
-        // 页面加载时发送测试数据
-        window.addEventListener('load', () => {
-            const testData = {
-                time: new Date().toISOString(),
-                userAgent: navigator.userAgent,
-                page: window.location.href
-            };
-            sendData(testData);
-        });
+        // 页面加载时发送请求
+        window.addEventListener('load', sendData);
     </script>
 </head>
 <body>
-    <h1>数据转发测试页</h1>
-    <p>打开浏览器控制台（F12）查看转发结果。</p>
+    <h1>GET请求转发测试</h1>
+    <p>检查浏览器控制台（F12）和服务器日志。</p>
 </body>
 </html>
