@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自定义筛选 | Custom Filter</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --primary-hover: #45a049;
+            --secondary-color: #2196F3;
+            --secondary-hover: #0b7dda;
+            --text-color: #333;
+            --bg-color: #fff;
+            --border-color: #ddd;
+            --input-bg: #fff;
+            --input-border: #ccc;
+            --table-header-bg: #f2f2f2;
+            --output-bg: #f5f5f5;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .instructions {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--table-header-bg);
+            font-weight: bold;
+        }
+
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            max-width: 120px;
+            padding: 5px;
+            box-sizing: border-box;
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+        }
+
+        .checkbox-group {
+            margin: 15px 0;
+        }
+
+        .checkbox-group label {
+            margin-right: 15px;
+            display: inline-block;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--secondary-hover);
+        }
+
+        .time-selector {
+            margin-bottom: 15px;
+        }
+
+        #parameter-output {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: var(--output-bg);
+            border-radius: 4px;
+            word-break: break-all;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        #parameter-string {
+            padding: 10px;
+            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+
+        #parameter-output h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        .time-unit {
+            margin-left: 10px;
+        }
+
+        .network-selector {
+            margin-bottom: 15px;
+        }
+
+        .button-group {
+            margin: 15px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .language-switcher {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 4px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            table {
+                font-size: 14px;
+            }
+            
+            th, td {
+                padding: 6px 8px;
+            }
+            
+            .btn {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+            
+            .language-switcher {
+                position: static;
+                margin-bottom: 15px;
+            }
+            
+            .checkbox-group label {
+                display: block;
+                margin-bottom: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            input[type="text"], input[type="number"], select {
+                max-width: 80px;
+            }
+            
+            .time-unit {
+                margin-left: 5px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 语言切换 -->
+        <div class="language-switcher">
+            <button id="lang-en" class="btn btn-secondary" style="display:none;">English</button>
+            <button id="lang-zh" class="btn btn-secondary">中文</button>
+        </div>
+
+        <h1 data-i18n="title">自定义筛选</h1>
+        
+        <!-- 使用说明 -->
+        <div class="instructions" data-i18n="instructions">
+            <p>不需要的参数直接留空，不用设置。设置好之后请点击页面底部的"生成参数"按钮，复制生成的参数串，返回电报设置过滤器。</p>
+        </div>
+        
+        <form id="filter-form">
+            <!-- 网络选择 -->
+            <div class="network-selector">
+                <label for="network" data-i18n="network">选择网络：</label>
+                <select id="network" name="chainIds">
+                    <option value="all" selected data-i18n="all_networks">全部网络</option>
+                    <option value="501">Solana</option>
+                    <option value="56">BNB Chain</option>
+                    <option value="1">Ethereum</option>
+                    <option value="8453">Base</option>
+                    <option value="607">TON</option>
+                    <option value="784">SUI</option>
+                    <option value="146">Sonic Mainnet</option>
+                    <option value="195">TRON</option>
+                    <option value="4200">Merlin</option>
+                    <option value="80094">Berachain</option>
+                    <option value="637">Aptos</option>
+                    <option value="42161">Arbitrum</option>
+                    <option value="369">PulseChain</option>
+                    <option value="33139">ApeChain</option>
+                    <option value="167000">Taiko Mainnet</option>
+                    <option value="25">Cronos</option>
+                    <option value="137">Polygon</option>
+                    <option value="196">X Layer</option>
+                    <option value="7000">Zeta</option>
+                    <option value="43114">Avalanche C</option>
+                    <option value="10">Optimism</option>
+                    <option value="100">Gnosis</option>
+                    <option value="81457">Blast</option>
+                    <option value="223">B² Network</option>
+                    <option value="324">zkSync Era</option>
+                    <option value="1329">Sei EVM</option>
+                    <option value="9004">Starknet</option>
+                    <option value="66">OKTC</option>
+                    <option value="250">Fantom</option>
+                    <option value="5000">Mantle</option>
+                    <option value="34443">Mode</option>
+                    <option value="10001">EthereumPoW</option>
+                    <option value="1030">Conflux eSpace</option>
+                    <option value="1101">Polygon zkEvm</option>
+                    <option value="59144">Linea</option>
+                    <option value="534352">Scroll</option>
+                    <option value="4689">IoTeX Network</option>
+                    <option value="169">Manta Pacific</option>
+                    <option value="204">opBNB</option>
+                    <option value="13371">Immutable zkEVM</option>
+                    <option value="60808">BOB Mainnet</option>
+                    <option value="88888">Chiliz Chain</option>
+                    <option value="200901">Bitlayer</option>
+                </select>
+            </div>
+
+            <!-- 时间范围选择 -->
+            <div class="time-selector">
+                <label for="time-period" data-i18n="time_range">时间范围：</label>
+                <select id="time-period" name="changePeriod">
+                    <option value="1" data-i18n="5min">5分钟</option>
+                    <option value="2" data-i18n="1hour">1小时</option>
+                    <option value="3" data-i18n="4hours">4小时</option>
+                    <option value="4" selected data-i18n="24hours">24小时</option>
+                </select>
+            </div>
+
+            <!-- 动态更新的隐藏字段 -->
+            <input type="hidden" id="periodType" name="periodType" value="4">
+            <input type="hidden" id="tradeNumPeriod" name="tradeNumPeriod" value="4">
+            <input type="hidden" id="txsPeriod" name="txsPeriod" value="4">
+            <input type="hidden" id="uniqueTraderPeriod" name="uniqueTraderPeriod" value="4">
+            <input type="hidden" id="volumePeriod" name="volumePeriod" value="4">
+
+            <!-- 合并后的筛选条件表格 -->
+            <table>
+                <thead>
+                    <tr>
+                        <th data-i18n="filter_metric">筛选指标</th>
+                        <th data-i18n="min_value">最小值</th>
+                        <th data-i18n="max_value">最大值</th>
+                        <th data-i18n="unit">单位</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td data-i18n="price_change">涨跌幅 (%)</td>
+                        <td><input type="number" name="changeMin" step="0.01" placeholder="最小" data-i18n-placeholder="min"></td>
+                        <td><input type="number" name="changeMax" placeholder="最大" data-i18n-placeholder="max"></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td data-i18n="transactions">交易笔数</td>
+                        <td><input type="number" name="txsMin" placeholder="最小" data-i18n-placeholder="min"></td>
+                        <td><input type="number" name="txsMax" placeholder="最大" data-i18n-placeholder="max"></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td data-i18n="unique_traders">独立交易地址数</td>
+                        <td><input type="number" name="uniqueTraderMin" placeholder="最小" data-i18n-placeholder="min"></td>
+                        <td><input type="number" name="uniqueTraderMax" placeholder="最大" data-i18n-placeholder="max"></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td data-i18n="trading_volume">成交量</td>
+                        <td><input type="number" name="tradeNumMin" placeholder="最小" data-i18n-placeholder="min"></td>
+                        <td><input type="number" name="tradeNumMax" placeholder="最大" data-i18n-placeholder="max"></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td data-i18n="holders">持币地址数</td>
+                        <td><input type="number" name="holdersMin" placeholder="最小" data-i18n-placeholder="min"></td>
+                        <td><input type="number" name="holdersMax" placeholder="最大" data-i18n-placeholder="max"></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td data-i18n="trading_amount">成交额 ($)</td>
+                        <td><input type="number" name="volumeMin" placeholder="最小" data-i18n-placeholder="min"></td>
+                        <td><input type="number" name="volumeMax" placeholder="最大" data-i18n-placeholder="max"></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td data-i18n="market_cap">市值 ($)</td>
+                        <td><input type="number" name="marketCapMin" placeholder="最小" data-i18n-placeholder="min"></td>
+                        <td><input type="number" name="marketCapMax" placeholder="最大" data-i18n-placeholder="max"></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td data-i18n="fdv">FDV ($)</td>
+                        <td><input type="number" name="fdvMin" placeholder="最小" data-i18n-placeholder="min"></td>
+                        <td><input type="number" name="fdvMax" placeholder="最大" data-i18n-placeholder="max"></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td data-i18n="liquidity">流动性 ($)</td>
+                        <td><input type="number" name="liquidityMin" placeholder="最小" data-i18n-placeholder="min"></td>
+                        <td><input type="number" name="liquidityMax" placeholder="最大" data-i18n-placeholder="max"></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td data-i18n="creation_time">创建时间</td>
+                        <td><input type="number" name="tokenAgeMin" placeholder="最小" data-i18n-placeholder="min"></td>
+                        <td><input type="number" name="tokenAgeMax" placeholder="最大" data-i18n-placeholder="max"></td>
+                        <td>
+                            <select name="tokenAgeType" class="time-unit">
+                                <option value="1" data-i18n="minutes">分钟</option>
+                                <option value="2" data-i18n="hours">小时</option>
+                                <option value="3" data-i18n="days">日</option>
+                                <option value="4" data-i18n="months">月</option>
+                                <option value="5" data-i18n="years">年</option>
+                            </select>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- 其他选项 -->
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="riskFilter-checkbox" checked> 
+                    <span data-i18n="hide_high_risk">隐藏高风险代币</span>
+                    <input type="hidden" name="riskFilter" id="riskFilter-value" value="true">
+                </label>
+                <label>
+                    <input type="checkbox" id="stableTokenFilter-checkbox" checked> 
+                    <span data-i18n="hide_stablecoins">隐藏稳定币</span>
+                    <input type="hidden" name="stableTokenFilter" id="stableTokenFilter-value" value="true">
+                </label>
+            </div>
+
+            <!-- 隐藏字段 -->
+            <input type="hidden" name="desc" value="true">
+            <input type="hidden" name="rankBy" value="5">
+            <input type="hidden" name="tags" value="0">
+
+            <!-- 按钮组 -->
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary" data-i18n="generate_params">生成参数</button>
+                <button type="button" id="reset-btn" class="btn btn-secondary" data-i18n="reset_all">一键清空</button>
+            </div>
+        </form>
+
+        <!-- 参数输出区域 -->
+        <div id="parameter-output" style="display:none;">
+            <h3 data-i18n="output_title">生成的过滤器参数请复制后再返回电报设置</h3>
+            <div id="parameter-string"></div>
+            <button id="copy-btn" class="btn btn-secondary" data-i18n="copy_params">复制参数</button>
+        </div>
+
+        <!-- 复制成功提示 -->
+        <div id="toast" class="toast" data-i18n="params_copied">参数已复制到剪贴板</div>
+    </div>
+
+    <script>
+        // 多语言支持
+        const translations = {
+            'zh': {
+                'title': '自定义筛选',
+                'instructions': '不需要的参数直接留空，不用设置。设置好之后请点击页面底部的"生成参数"按钮，复制生成的参数串，返回电报设置过滤器。',
+                'network': '选择网络：',
+                'all_networks': '全部网络',
+                'time_range': '时间范围：',
+                '5min': '5分钟',
+                '1hour': '1小时',
+                '4hours': '4小时',
+                '24hours': '24小时',
+                'filter_metric': '筛选指标',
+                'min_value': '最小值',
+                'max_value': '最大值',
+                'unit': '单位',
+                'price_change': '涨跌幅 (%)',
+                'transactions': '交易笔数',
+                'unique_traders': '独立交易地址数',
+                'trading_volume': '成交量',
+                'holders': '持币地址数',
+                'trading_amount': '成交额 ($)',
+                'market_cap': '市值 ($)',
+                'fdv': 'FDV ($)',
+                'liquidity': '流动性 ($)',
+                'creation_time': '创建时间',
+                'minutes': '分钟',
+                'hours': '小时',
+                'days': '日',
+                'months': '月',
+                'years': '年',
+                'hide_high_risk': '隐藏高风险代币',
+                'hide_stablecoins': '隐藏稳定币',
+                'generate_params': '生成参数',
+                'reset_all': '一键清空',
+                'output_title': '生成的过滤器参数请复制后再返回电报设置',
+                'copy_params': '复制参数',
+                'min': '最小',
+                'max': '最大',
+                'params_copied': '参数已复制到剪贴板',
+                'reset_confirm': '确定要清空所有设置吗？',
+                'settings_saved': '设置已保存',
+                'settings_loaded': '设置已加载'
+            },
+            'en': {
+                'title': 'Custom Filter',
+                'instructions': 'Leave parameters you don\'t need blank. After setting up, click the "Generate Parameters" button at the bottom, copy the generated parameter string, and return to Telegram to set up the filter.',
+                'network': 'Network:',
+                'all_networks': 'All Networks',
+                'time_range': 'Time Range:',
+                '5min': '5 minutes',
+                '1hour': '1 hour',
+                '4hours': '4 hours',
+                '24hours': '24 hours',
+                'filter_metric': 'Filter Metric',
+                'min_value': 'Min',
+                'max_value': 'Max',
+                'unit': 'Unit',
+                'price_change': 'Price Change (%)',
+                'transactions': 'Transactions',
+                'unique_traders': 'Unique Traders',
+                'trading_volume': 'Trading Volume',
+                'holders': 'Holders',
+                'trading_amount': 'Trading Amount ($)',
+                'market_cap': 'Market Cap ($)',
+                'fdv': 'FDV ($)',
+                'liquidity': 'Liquidity ($)',
+                'creation_time': 'Creation Time',
+                'minutes': 'minutes',
+                'hours': 'hours',
+                'days': 'days',
+                'months': 'months',
+                'years': 'years',
+                'hide_high_risk': 'Hide High Risk Tokens',
+                'hide_stablecoins': 'Hide Stablecoins',
+                'generate_params': 'Generate Parameters',
+                'reset_all': 'Reset All',
+                'output_title': 'Please copy the generated filter parameters and return to Telegram to set up',
+                'copy_params': 'Copy Parameters',
+                'min': 'Min',
+                'max': 'Max',
+                'params_copied': 'Parameters copied to clipboard',
+                'reset_confirm': 'Are you sure you want to reset all settings?',
+                'settings_saved': 'Settings saved',
+                'settings_loaded': 'Settings loaded'
+            }
+        };
+
+        // 当前语言
+        let currentLang = 'zh';
+
+        // 切换语言
+        function switchLanguage(lang) {
+            currentLang = lang;
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang][key]) {
+                    el.textContent = translations[lang][key];
+                }
+            });
+            
+            // 更新placeholder
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (translations[lang][key]) {
+                    el.setAttribute('placeholder', translations[lang][key]);
+                }
+            });
+            
+            // 更新按钮显示
+            document.getElementById('lang-en').style.display = lang === 'zh' ? 'inline-block' : 'none';
+            document.getElementById('lang-zh').style.display = lang === 'en' ? 'inline-block' : 'none';
+            
+            // 保存语言偏好
+            localStorage.setItem('filterTool_lang', lang);
+        }
+
+        // 语言切换按钮事件
+        document.getElementById('lang-en').addEventListener('click', () => switchLanguage('en'));
+        document.getElementById('lang-zh').addEventListener('click', () => switchLanguage('zh'));
+
+        // 初始化语言
+        const savedLang = localStorage.getItem('filterTool_lang') || 'zh';
+        switchLanguage(savedLang);
+
+        // 获取时间范围选择器
+        const timePeriodSelect = document.getElementById('time-period');
+        
+        // 更新所有相关周期参数的函数
+        function updatePeriodValues() {
+            const selectedValue = timePeriodSelect.value;
+            document.getElementById('periodType').value = selectedValue;
+            document.getElementById('tradeNumPeriod').value = selectedValue;
+            document.getElementById('txsPeriod').value = selectedValue;
+            document.getElementById('uniqueTraderPeriod').value = selectedValue;
+            document.getElementById('volumePeriod').value = selectedValue;
+        }
+        
+        // 监听时间范围变化
+        timePeriodSelect.addEventListener('change', updatePeriodValues);
+        
+        // 初始化时更新一次
+        updatePeriodValues();
+
+        // 更新隐藏字段的值
+        document.getElementById('riskFilter-checkbox').addEventListener('change', function() {
+            document.getElementById('riskFilter-value').value = this.checked ? 'true' : 'false';
+        });
+        
+        document.getElementById('stableTokenFilter-checkbox').addEventListener('change', function() {
+            document.getElementById('stableTokenFilter-value').value = this.checked ? 'true' : 'false';
+        });
+
+        // 保存设置到本地存储
+        function saveSettings() {
+            const form = document.getElementById('filter-form');
+            const formData = new FormData(form);
+            const settings = {};
+            
+            formData.forEach((value, key) => {
+                settings[key] = value;
+            });
+            
+            // 保存复选框状态
+            settings['riskFilter-checkbox'] = document.getElementById('riskFilter-checkbox').checked;
+            settings['stableTokenFilter-checkbox'] = document.getElementById('stableTokenFilter-checkbox').checked;
+            
+            // 保存选择框的值
+            settings['chainIds'] = form.elements['chainIds'].value;
+            settings['changePeriod'] = form.elements['changePeriod'].value;
+            settings['tokenAgeType'] = form.elements['tokenAgeType'].value;
+            
+            // 保存所有输入框的值
+            const inputs = form.querySelectorAll('input[type="number"], input[type="text"]');
+            inputs.forEach(input => {
+                settings[input.name] = input.value;
+            });
+            
+            localStorage.setItem('filterTool_settings', JSON.stringify(settings));
+            console.log(translations[currentLang]['settings_saved']);
+        }
+
+        // 从本地存储加载设置
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('filterTool_settings');
+            if (savedSettings) {
+                try {
+                    const settings = JSON.parse(savedSettings);
+                    const form = document.getElementById('filter-form');
+                    
+                    // 恢复选择框的值
+                    if (settings['chainIds']) {
+                        form.elements['chainIds'].value = settings['chainIds'];
+                    }
+                    
+                    if (settings['changePeriod']) {
+                        form.elements['changePeriod'].value = settings['changePeriod'];
+                        updatePeriodValues();
+                    }
+                    
+                    if (settings['tokenAgeType']) {
+                        form.elements['tokenAgeType'].value = settings['tokenAgeType'];
+                    }
+                    
+                    // 恢复复选框状态
+                    if (settings['riskFilter-checkbox'] !== undefined) {
+                        document.getElementById('riskFilter-checkbox').checked = settings['riskFilter-checkbox'];
+                        document.getElementById('riskFilter-value').value = settings['riskFilter-checkbox'] ? 'true' : 'false';
+                    }
+                    
+                    if (settings['stableTokenFilter-checkbox'] !== undefined) {
+                        document.getElementById('stableTokenFilter-checkbox').checked = settings['stableTokenFilter-checkbox'];
+                        document.getElementById('stableTokenFilter-value').value = settings['stableTokenFilter-checkbox'] ? 'true' : 'false';
+                    }
+                    
+                    // 恢复所有输入框的值
+                    const inputs = form.querySelectorAll('input[type="number"], input[type="text"]');
+                    inputs.forEach(input => {
+                        if (settings[input.name] !== undefined) {
+                            input.value = settings[input.name];
+                        }
+                    });
+                    
+                    console.log(translations[currentLang]['settings_loaded']);
+                } catch (e) {
+                    console.error('加载设置失败:', e);
+                }
+            }
+        }
+
+        // 一键清空设置
+        document.getElementById('reset-btn').addEventListener('click', function() {
+            if (confirm(translations[currentLang]['reset_confirm'])) {
+                const form = document.getElementById('filter-form');
+                
+                // 清空所有输入框
+                const inputs = form.querySelectorAll('input[type="number"], input[type="text"]');
+                inputs.forEach(input => {
+                    input.value = '';
+                });
+                
+                // 重置选择框
+                form.elements['chainIds'].value = 'all';
+                form.elements['changePeriod'].value = '4';
+                form.elements['tokenAgeType'].value = '1';
+                
+                // 重置复选框
+                document.getElementById('riskFilter-checkbox').checked = true;
+                document.getElementById('riskFilter-value').value = 'true';
+                document.getElementById('stableTokenFilter-checkbox').checked = true;
+                document.getElementById('stableTokenFilter-value').value = 'true';
+                
+                // 更新周期参数
+                updatePeriodValues();
+                
+                // 清空本地存储
+                localStorage.removeItem('filterTool_settings');
+            }
+        });
+
+        // 表单提交处理
+        document.getElementById('filter-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 保存当前设置
+            saveSettings();
+            
+            // 获取表单元素
+            const form = this;
+            const params = new URLSearchParams();
+            
+            // 添加所有固定参数（总是包含）
+            params.append('chainIds', form.elements['chainIds'].value);
+            params.append('desc', 'true');
+            params.append('rankBy', '5');
+            params.append('tags', '0');
+            params.append('tokenAgeType', form.elements['tokenAgeType'].value);
+            
+            // 添加时间相关参数（从changePeriod派生）
+            const periodValue = form.elements['changePeriod'].value;
+            params.append('changePeriod', periodValue);
+            params.append('periodType', periodValue);
+            params.append('tradeNumPeriod', periodValue);
+            params.append('txsPeriod', periodValue);
+            params.append('uniqueTraderPeriod', periodValue);
+            params.append('volumePeriod', periodValue);
+            
+            // 添加风险过滤参数（总是包含）
+            params.append('riskFilter', document.getElementById('riskFilter-value').value);
+            params.append('stableTokenFilter', document.getElementById('stableTokenFilter-value').value);
+            
+            // 添加有值的参数
+            const valueInputs = [
+                'changeMin', 'changeMax', 'txsMin', 'txsMax', 'uniqueTraderMin', 'uniqueTraderMax',
+                'tradeNumMin', 'tradeNumMax', 'holdersMin', 'holdersMax', 'volumeMin', 'volumeMax',
+                'marketCapMin', 'marketCapMax', 'fdvMin', 'fdvMax', 'liquidityMin', 'liquidityMax',
+                'tokenAgeMin', 'tokenAgeMax'
+            ];
+            
+            valueInputs.forEach(name => {
+                const input = form.elements[name];
+                if (input && input.value.trim() !== '') {
+                    params.append(name, input.value);
+                }
+            });
+            
+            // 显示参数
+            const parameterString = params.toString();
+            document.getElementById('parameter-string').textContent = 'filter=2&'+parameterString;
+            
+            // 显示输出区域
+            document.getElementById('parameter-output').style.display = 'block';
+            
+            // 滚动到输出区域
+            document.getElementById('parameter-output').scrollIntoView({ behavior: 'smooth' });
+        });
+        
+        // 显示Toast提示
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // 复制参数到剪贴板
+        document.getElementById('copy-btn').addEventListener('click', function() {
+            const text = document.getElementById('parameter-string').textContent;
+            
+            // 使用现代剪贴板API
+            navigator.clipboard.writeText(text).then(() => {
+                showToast();
+            }).catch(err => {
+                // 降级方案：使用老式方法
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    showToast();
+                } catch (err) {
+                    alert(translations[currentLang]['params_copied'] + ' (请手动复制)');
+                }
+                document.body.removeChild(textarea);
+            });
+        });
+
+        // 页面加载时恢复设置
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
+            
+            // 监听所有表单变化自动保存
+            const form = document.getElementById('filter-form');
+            form.addEventListener('change', function() {
+                saveSettings();
+            });
+            
+            // 监听输入框输入变化自动保存
+            const inputs = form.querySelectorAll('input[type="number"], input[type="text"]');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    saveSettings();
+                });
+            });
+        });
+    </script>
+</body>
+</html>
